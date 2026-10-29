@@ -26,9 +26,9 @@ Les six tables requises par le sujet :
 5. `KnowledgeBase`
 6. `AuditLog`
 
-Les champs, relations et règles détaillés seront définis avant la création du
-schéma et documentés ici. Ne place aucune donnée réelle de collaborateurs dans
-le jeu de démonstration.
+Les champs, relations et règles détaillés sont définis dans
+[SCHEMA.md](SCHEMA.md). Ne place aucune donnée réelle de collaborateurs dans le
+jeu de démonstration.
 
 ## Workflows prévus
 
