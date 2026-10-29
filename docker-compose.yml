@@ -1,0 +1,28 @@
+services:
+  baserow:
+    image: ${BASEROW_IMAGE:-baserow/baserow:2.4.1}
+    restart: unless-stopped
+    environment:
+      BASEROW_PUBLIC_URL: ${BASEROW_PUBLIC_URL:-http://localhost:8081}
+    ports:
+      - "127.0.0.1:8081:80"
+    volumes:
+      - baserow_data:/baserow/data
+
+  n8n:
+    image: ${N8N_IMAGE:-docker.n8n.io/n8nio/n8n:2.45.6}
+    restart: unless-stopped
+    environment:
+      GENERIC_TIMEZONE: ${TIMEZONE:-Europe/Paris}
+      TZ: ${TIMEZONE:-Europe/Paris}
+      N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS: "true"
+      N8N_SECURE_COOKIE: "false"
+      N8N_DIAGNOSTICS_ENABLED: "false"
+    ports:
+      - "127.0.0.1:5678:5678"
+    volumes:
+      - n8n_data:/home/node/.n8n
+
+volumes:
+  baserow_data:
+  n8n_data:
