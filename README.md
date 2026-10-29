@@ -62,8 +62,9 @@ personnaliser, copie-le en `.env` ; ce dernier est ignoré par Git.
 ## Prochaines étapes
 
 1. Vérifier que les deux interfaces locales s'ouvrent.
-2. Créer les six tables Baserow demandées dans le sujet et insérer des données
-   de démonstration.
+2. Créer les six tables Baserow décrites dans
+   [docs/SCHEMA.md](docs/SCHEMA.md), puis ajouter des données fictives de
+   démonstration.
 3. Construire et tester le workflow W1, puis W2, W3 et W4.
 4. Exporter les workflows dans `workflows/` et compléter la documentation.
 
