@@ -1,0 +1,16 @@
+.env
+.env.*
+!.env.example
+projet_no_code_avancée.pdf
+
+# Local data and credentials
+.n8n/
+baserow_data/
+n8n_data/
+*.pem
+*.key
+
+# Operating system / editor
+.DS_Store
+Thumbs.db
+.vscode/
