@@ -107,7 +107,7 @@ credentials, car aucun secret n'est versionné :
 - **Google Gemini(PaLM) Api account** : ta clé Gemini.
 
 Importe aussi `SUB-write-audit-log.json`, `W2-assisted-reply.json`,
-`W3-sla-reminders.json` puis
+`W3-sla-reminders.json`, `W4-weekly-report.json` puis
 `W1-ticket-intake.json` (dans cet ordre) ; le sous-workflow d'audit doit être
 publié pour être appelable par W2.
 

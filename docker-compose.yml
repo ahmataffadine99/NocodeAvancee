@@ -35,6 +35,7 @@ services:
       SLA_WARNING_HOURS: ${SLA_WARNING_HOURS:-1}
       MAIL_FROM: ${MAIL_FROM:-helpdesk@example.test}
       APPROVER_EMAIL: ${APPROVER_EMAIL:-demo.approver@example.test}
+      REPORT_EMAIL: ${REPORT_EMAIL:-demo.manager@example.test}
     ports:
       - "127.0.0.1:5678:5678"
     volumes:

@@ -1,0 +1,330 @@
+[
+  {
+    "updatedAt": "2026-11-03T11:20:53.847Z",
+    "createdAt": "2026-11-03T11:20:53.847Z",
+    "id": "w4WeeklyReport001",
+    "name": "W4 - Weekly Report",
+    "description": null,
+    "active": false,
+    "isArchived": false,
+    "nodes": [
+      {
+        "id": "d593ad6e-43af-df42-2f9c-beadad920969",
+        "name": "Run Every Friday",
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1.2,
+        "position": [
+          0,
+          300
+        ],
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "field": "weeks",
+                "weeksInterval": 1,
+                "triggerAtDay": [
+                  5
+                ],
+                "triggerAtHour": 17,
+                "triggerAtMinute": 0
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "9d85d289-1bf1-bc47-ac68-665e9226512b",
+        "name": "Fetch Tickets",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          220,
+          300
+        ],
+        "parameters": {
+          "method": "GET",
+          "url": "={{ $env.BASEROW_INTERNAL_URL + '/api/database/rows/table/' + $env.BASEROW_TABLE_TICKETS_ID + '/' }}",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "user_field_names",
+                "value": "true"
+              },
+              {
+                "name": "size",
+                "value": "200"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "bsrwHdrAuth0001",
+            "name": "Baserow Header Auth"
+          }
+        },
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000
+      },
+      {
+        "id": "e169fc9f-b69d-9c4e-f29d-c2a392639cd4",
+        "name": "Compute Weekly Stats",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          440,
+          300
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "const since = DateTime.now().minus({ days: 7 });\nconst rows = ($input.first().json.results ?? []).filter((t) => t.created_at && DateTime.fromISO(t.created_at) >= since);\nconst count = (key) => rows.reduce((acc, t) => { acc[key(t)] = (acc[key(t)] ?? 0) + 1; return acc; }, {});\nconst stats = {\n  period_start: since.toISODate(),\n  period_end: DateTime.now().toISODate(),\n  total: rows.length,\n  by_category: count((t) => t.category?.value ?? 'unknown'),\n  by_priority: count((t) => t.priority?.value ?? 'unknown'),\n  by_status: count((t) => t.status?.value ?? 'unknown'),\n  by_technician: count((t) => t.assignee?.[0]?.value ?? 'unassigned'),\n  late: rows.filter((t) => t.status?.value === 'late').length,\n  manual_review: rows.filter((t) => t.status?.value === 'manual_review').length,\n};\nreturn [{ json: { stats } }];"
+        }
+      },
+      {
+        "id": "7a47f17b-87ce-ae84-c6f9-5af712e75f7b",
+        "name": "Write Weekly Summary",
+        "type": "@n8n/n8n-nodes-langchain.chainLlm",
+        "typeVersion": 1.7,
+        "position": [
+          660,
+          300
+        ],
+        "parameters": {
+          "promptType": "define",
+          "text": "={{ 'Statistiques de la semaine (JSON):\\n' + JSON.stringify($json.stats) }}",
+          "messages": {
+            "messageValues": [
+              {
+                "message": "Tu rédiges le rapport hebdomadaire du support informatique de Northwind Industries pour le responsable. À partir des seules statistiques JSON fournies, écris en français un résumé en langage naturel de 5 à 8 lignes : volume total, catégories et priorités dominantes, charge par technicien, tickets en retard ou en revue manuelle, et un point d'attention. N'invente aucun chiffre ni fait absent des statistiques. S'il n'y a aucun ticket, dis-le simplement."
+              }
+            ]
+          }
+        },
+        "onError": "continueRegularOutput",
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 5000
+      },
+      {
+        "id": "88283a71-5c3b-a0f1-2945-2438b532b1f2",
+        "name": "Gemini Chat Model",
+        "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+        "typeVersion": 1,
+        "position": [
+          580,
+          520
+        ],
+        "parameters": {
+          "modelName": "models/gemini-3-flash-preview",
+          "options": {
+            "temperature": 0.2
+          }
+        },
+        "credentials": {
+          "googlePalmApi": {
+            "id": "Oo0yF8yxhfbkBJ72",
+            "name": "Google Gemini(PaLM) Api account"
+          }
+        }
+      },
+      {
+        "id": "faf44b65-0ac3-ec90-9b5d-958547571d2c",
+        "name": "Build Report",
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          880,
+          300
+        ],
+        "parameters": {
+          "mode": "raw",
+          "jsonOutput": "={{ {\n  stats: $('Compute Weekly Stats').item.json.stats,\n  ai_available: !!$json.text,\n  report: 'WEEKLY HELPDESK REPORT ' + $('Compute Weekly Stats').item.json.stats.period_start + ' -> ' + $('Compute Weekly Stats').item.json.stats.period_end\n    + '\\n\\nKey figures\\n- Tickets created: ' + $('Compute Weekly Stats').item.json.stats.total\n    + '\\n- Late: ' + $('Compute Weekly Stats').item.json.stats.late + '\\n- Manual review: ' + $('Compute Weekly Stats').item.json.stats.manual_review\n    + '\\n- By category: ' + JSON.stringify($('Compute Weekly Stats').item.json.stats.by_category)\n    + '\\n- By priority: ' + JSON.stringify($('Compute Weekly Stats').item.json.stats.by_priority)\n    + '\\n- By status: ' + JSON.stringify($('Compute Weekly Stats').item.json.stats.by_status)\n    + '\\n- By technician: ' + JSON.stringify($('Compute Weekly Stats').item.json.stats.by_technician)\n    + '\\n\\nSummary\\n' + ($json.text || 'AI summary unavailable this week. See the key figures above.')\n} }}",
+          "options": {}
+        }
+      },
+      {
+        "id": "6e0b206c-744c-3633-3382-a324406c23fd",
+        "name": "Send Weekly Report",
+        "type": "n8n-nodes-base.emailSend",
+        "typeVersion": 2.1,
+        "position": [
+          1100,
+          300
+        ],
+        "parameters": {
+          "fromEmail": "={{ $env.MAIL_FROM }}",
+          "toEmail": "={{ $env.REPORT_EMAIL }}",
+          "subject": "={{ '[HelpDesk] Weekly report ' + $json.stats.period_end }}",
+          "emailFormat": "text",
+          "text": "={{ $json.report }}",
+          "options": {}
+        },
+        "credentials": {
+          "smtp": {
+            "id": "mailpitSmtp0001",
+            "name": "Mailpit SMTP"
+          }
+        },
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000
+      },
+      {
+        "id": "931612d6-a622-df98-5a60-9d631e0aaa62",
+        "name": "Log Weekly Report",
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.2,
+        "position": [
+          1320,
+          300
+        ],
+        "parameters": {
+          "workflowId": {
+            "__rl": true,
+            "value": "subAuditLog00001",
+            "mode": "id"
+          },
+          "workflowInputs": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "ticket_id": "={{ 0 }}",
+              "action": "report_generated",
+              "details": "={{ JSON.stringify({ ...$('Build Report').item.json.stats, ai_available: $('Build Report').item.json.ai_available, success: true }) }}",
+              "outcome": "={{ 'success: report sent to ' + $env.REPORT_EMAIL }}"
+            },
+            "matchingColumns": [],
+            "schema": [],
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": false
+          },
+          "mode": "each",
+          "options": {
+            "waitForSubWorkflow": true
+          }
+        }
+      }
+    ],
+    "connections": {
+      "Run Every Friday": {
+        "main": [
+          [
+            {
+              "node": "Fetch Tickets",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Fetch Tickets": {
+        "main": [
+          [
+            {
+              "node": "Compute Weekly Stats",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Compute Weekly Stats": {
+        "main": [
+          [
+            {
+              "node": "Write Weekly Summary",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Gemini Chat Model": {
+        "ai_languageModel": [
+          [
+            {
+              "node": "Write Weekly Summary",
+              "type": "ai_languageModel",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Write Weekly Summary": {
+        "main": [
+          [
+            {
+              "node": "Build Report",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Report": {
+        "main": [
+          [
+            {
+              "node": "Send Weekly Report",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Send Weekly Report": {
+        "main": [
+          [
+            {
+              "node": "Log Weekly Report",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "settings": {
+      "executionOrder": "v1"
+    },
+    "staticData": null,
+    "meta": null,
+    "nodeGroups": [],
+    "pinData": null,
+    "versionId": "641af86e-7bf7-47e5-930c-b6c66d69ae63",
+    "activeVersionId": null,
+    "versionCounter": 1,
+    "triggerCount": 0,
+    "sourceWorkflowId": null,
+    "tags": [],
+    "shared": [
+      {
+        "updatedAt": "2026-11-03T11:20:53.851Z",
+        "createdAt": "2026-11-03T11:20:53.851Z",
+        "role": "workflow:owner",
+        "workflowId": "w4WeeklyReport001",
+        "projectId": "9ZscTdcICKosGJ3z",
+        "project": {
+          "updatedAt": "2026-10-29T19:31:30.448Z",
+          "createdAt": "2026-10-29T19:21:11.139Z",
+          "id": "9ZscTdcICKosGJ3z",
+          "name": "Abdoulaye Affadine AHMAT <ahmataffadine82@gmail.com>",
+          "type": "personal",
+          "icon": null,
+          "description": null,
+          "customTelemetryTags": [],
+          "creatorId": "82e5e99f-adc0-4b0c-b545-b718788e8597"
+        }
+      }
+    ],
+    "versionMetadata": {
+      "name": null,
+      "description": null
+    }
+  }
+]

@@ -37,6 +37,13 @@ répondre uniquement à partir de ces articles, n'inventer ni procédure, ni lie
 ni délai, et renvoyer `can_answer=false` avec un corps vide s'ils ne suffisent
 pas. Aucun brouillon n'est envoyé sans approbation humaine.
 
+## W4 — Rapport hebdomadaire
+
+Le nœud `Write Weekly Summary` (Basic LLM Chain Gemini) reçoit uniquement les
+statistiques agrégées de la semaine (JSON) et rédige un résumé en français de
+5 à 8 lignes, sans inventer de chiffre. Si l'IA échoue, le rapport est envoyé
+avec les chiffres clés et la mention « AI summary unavailable ».
+
 Règles à respecter :
 
 - Demander une sortie conforme à un schéma JSON explicite.
