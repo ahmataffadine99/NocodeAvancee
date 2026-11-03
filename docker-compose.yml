@@ -23,6 +23,12 @@ services:
     volumes:
       - n8n_data:/home/node/.n8n
 
+  mailpit:
+    image: ${MAILPIT_IMAGE:-axllent/mailpit:v1.21}
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8025:8025"
+
 volumes:
   baserow_data:
   n8n_data:

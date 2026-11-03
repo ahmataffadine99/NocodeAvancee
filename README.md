@@ -29,6 +29,10 @@ minutes. Ouvre ensuite :
 
 - Baserow : <http://localhost:8081>
 - n8n : <http://localhost:5678>
+- Mailpit (boîte de réception locale des e-mails envoyés par n8n) : <http://localhost:8025>
+
+Dans n8n, les e-mails passent par un credential SMTP : hôte `mailpit`, port `1025`,
+sans authentification ni SSL. Aucun e-mail ne quitte la machine.
 
 Connecte-toi avec le compte créé dans chaque application.
 Les données sont conservées dans les volumes Docker `baserow_data` et
