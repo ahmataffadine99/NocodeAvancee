@@ -1,4 +1,46 @@
-# Architecture de départ
+# Architecture
+
+## Vue d'ensemble
+
+```mermaid
+flowchart LR
+  F[Form Trigger W1] --> W1[W1 Ticket Intake]
+  W1 -->|Baserow| DB[(Baserow: Collaborators, Technicians, Tickets, Replies, KnowledgeBase, AuditLog)]
+  W1 -->|Gemini| AI[Basic LLM Chain + Structured Output]
+  W1 -->|mails| M[Mailpit SMTP]
+  W1 -->|Execute Workflow| W2[W2 Assisted Reply]
+  W2 -->|Wait + form| H[Approbation humaine]
+  W2 --> M
+  S1[Schedule hourly] --> W3[W3 SLA Reminders]
+  S2[Schedule Friday] --> W4[W4 Weekly Report]
+  WH[Webhook] --> W5[W5 KB Assistant]
+  W2 & W3 & W4 & ERR --> SUB[SUB Write Audit Log]
+  SUB --> DB
+  W1 & W2 & W3 & W4 & W5 -.erreur.-> ERR[ERR Global Error Handler]
+```
+
+## Choix et justifications
+
+- **Basic LLM Chain, pas d'agent** : classification, brouillon, rapport et
+  réponse KB sont des appels déterministes sans appel d'outil dynamique ; un agent
+  n'apporterait que de l'imprévisibilité et du coût. La sortie de classification
+  et de réponse est contrainte par un Structured Output Parser (JSON Schema avec
+  `required`, `enum`, bornes de `confidence`).
+- **HTTP Request + API Baserow** plutôt que le nœud Baserow : même résultat, mais
+  filtres, pagination et `user_field_names` maîtrisés avec un seul credential
+  Header Auth.
+- **Sous-workflow d'audit** : une seule définition de l'écriture dans `AuditLog`,
+  appelée par quatre workflows ; contrat documenté dans sa description
+  (entrées typées, sortie `{ ok, audit_id, action, ticket_id }`).
+- **Stratégie `onError`** : arrêt par défaut sur les écritures et l'envoi au
+  demandeur (risque de données incohérentes) ; `continueRegularOutput` pour les
+  notifications (mail technicien, accusé de réception, alerte P1, alerte erreur)
+  et pour les appels IA (branche de repli).
+- **Retry** : 3 essais sur HTTP, SMTP et IA ; attente fixe de n8n (2 s, 5 s pour
+  l'IA, ce qui couvre aussi un 429 ponctuel).
+- **Idempotence** : W1 met à jour le ticket ouvert du même demandeur, même sujet,
+  même jour ; W3 ignore les tickets déjà `late` ou `closed`.
+- **Mailpit** : boîte SMTP locale, aucun mail ne quitte la machine.
 
 ## Services locaux
 
@@ -6,17 +48,17 @@
 | --- | --- | --- | --- |
 | Baserow | `baserow/baserow:2.4.1` | `http://localhost:8081` | Volume Docker `baserow_data` |
 | n8n | `docker.n8n.io/n8nio/n8n:2.45.6` | `http://localhost:5678` | Volume Docker `n8n_data` |
+| Mailpit | `axllent/mailpit:v1.21` | `http://localhost:8025` (SMTP `mailpit:1025`) | Aucune |
 
-Les deux ports sont liés à `127.0.0.1`. Baserow utilise son image tout-en-un
+Les ports sont liés à `127.0.0.1`. Baserow utilise son image tout-en-un
 officielle pour ce prototype local. n8n utilise son stockage SQLite intégré et
 son volume persistant ; cela évite d'ajouter un service de base de données avant
 que le besoin du projet ne le justifie.
 
-Les appels d'n8n vers Baserow utiliseront l'adresse interne Docker
+Les appels d'n8n vers Baserow utilisent l'adresse interne Docker
 `http://baserow:80`, et non `localhost` (qui désigne le conteneur n8n lui-même).
-Les requêtes API faites depuis n8n ajoutent l'en-tête `Host: localhost:8081` :
-Baserow utilise cette adresse publique canonique et traite sinon le nom Docker
-comme un domaine d'application publiée.
+La variable `BASEROW_EXTRA_PUBLIC_URLS=http://baserow` du service Baserow
+autorise cette adresse sans en-tête `Host` particulier.
 
 ## Modèle Baserow à créer
 
@@ -50,14 +92,3 @@ Le jeu fictif rejouable demandé par le sujet se trouve dans
 - `ERR - Global Error Handler` : workflow d'erreur global (Error Trigger),
   rattaché à tous les workflows ; il journalise dans `AuditLog` et alerte
   `ERROR_EMAIL`.
-
-## Robustesse
-
-- Appels HTTP, Gemini et SMTP : 3 essais avec attente fixe entre les essais
-  (2 s pour HTTP/SMTP, 5 s pour l'IA), y compris sur 429.
-- IA : `onError: continueRegularOutput` puis branche de repli (W1 : revue
-  manuelle ; W2 : pas de brouillon ; W4 : rapport sans résumé ; W5 : message
-  « aucune réponse fiable »).
-- Idempotence : W1 refuse les doublons ; W3 ne relance plus un ticket déjà
-  `late`.
-- Aucun secret dans les workflows : credentials n8n et variables d'environnement.

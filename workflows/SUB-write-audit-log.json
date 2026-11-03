@@ -4,7 +4,7 @@
     "createdAt": "2026-11-03T10:50:31.371Z",
     "id": "subAuditLog00001",
     "name": "SUB - Write Audit Log",
-    "description": null,
+    "description": "Writes one row in the AuditLog Baserow table. Inputs (typed): ticket_id (number, 0 or empty = no ticket), action (string: triaged | reply_drafted | reply_sent | ai_error | sla_reminder | report_generated), details (string, JSON text), outcome (string). Output (one item): { ok: boolean, audit_id: number, action: string, ticket_id: number }.",
     "active": true,
     "isArchived": false,
     "nodes": [
@@ -78,6 +78,21 @@
         "retryOnFail": true,
         "maxTries": 3,
         "waitBetweenTries": 2000
+      },
+      {
+        "parameters": {
+          "mode": "raw",
+          "jsonOutput": "={{ { ok: !!$json.id, audit_id: $json.id, action: $json.action?.value ?? $json.action, ticket_id: $('Receive Audit Entry').item.json.ticket_id ?? 0 } }}",
+          "options": {}
+        },
+        "id": "a1b2c3d4-0000-4000-8000-000000000001",
+        "name": "Return Audit Result",
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          440,
+          300
+        ]
       }
     ],
     "connections": {
@@ -86,6 +101,17 @@
           [
             {
               "node": "Create Audit Entry",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Create Audit Entry": {
+        "main": [
+          [
+            {
+              "node": "Return Audit Result",
               "type": "main",
               "index": 0
             }
@@ -106,30 +132,6 @@
     "versionCounter": 1,
     "triggerCount": 0,
     "sourceWorkflowId": null,
-    "tags": [],
-    "shared": [
-      {
-        "updatedAt": "2026-11-03T10:50:31.381Z",
-        "createdAt": "2026-11-03T10:50:31.381Z",
-        "role": "workflow:owner",
-        "workflowId": "subAuditLog00001",
-        "projectId": "9ZscTdcICKosGJ3z",
-        "project": {
-          "updatedAt": "2026-10-29T19:31:30.448Z",
-          "createdAt": "2026-10-29T19:21:11.139Z",
-          "id": "9ZscTdcICKosGJ3z",
-          "name": "Abdoulaye Affadine AHMAT <ahmataffadine82@gmail.com>",
-          "type": "personal",
-          "icon": null,
-          "description": null,
-          "customTelemetryTags": [],
-          "creatorId": "82e5e99f-adc0-4b0c-b545-b718788e8597"
-        }
-      }
-    ],
-    "versionMetadata": {
-      "name": null,
-      "description": null
-    }
+    "tags": []
   }
 ]

@@ -775,7 +775,8 @@
         },
         "retryOnFail": true,
         "maxTries": 3,
-        "waitBetweenTries": 2000
+        "waitBetweenTries": 2000,
+        "onError": "continueRegularOutput"
       },
       {
         "id": "aa91471d-5059-e9ef-9bc5-471cc51fdd6c",
@@ -835,7 +836,8 @@
         },
         "retryOnFail": true,
         "maxTries": 3,
-        "waitBetweenTries": 2000
+        "waitBetweenTries": 2000,
+        "onError": "continueRegularOutput"
       },
       {
         "id": "cdd705fb-fd92-4ef7-8af2-3d6a44296db5",
@@ -900,7 +902,8 @@
         },
         "retryOnFail": true,
         "maxTries": 3,
-        "waitBetweenTries": 2000
+        "waitBetweenTries": 2000,
+        "onError": "continueRegularOutput"
       },
       {
         "id": "32ac24f1-4535-abfc-778d-5609fe1fd087",
@@ -1314,30 +1317,6 @@
     "versionCounter": 30,
     "triggerCount": 0,
     "sourceWorkflowId": null,
-    "tags": [],
-    "shared": [
-      {
-        "updatedAt": "2026-10-29T20:14:24.575Z",
-        "createdAt": "2026-10-29T20:14:24.575Z",
-        "role": "workflow:owner",
-        "workflowId": "bz6Fhey9yWCxEso3",
-        "projectId": "9ZscTdcICKosGJ3z",
-        "project": {
-          "updatedAt": "2026-10-29T19:31:30.448Z",
-          "createdAt": "2026-10-29T19:21:11.139Z",
-          "id": "9ZscTdcICKosGJ3z",
-          "name": "Abdoulaye Affadine AHMAT <ahmataffadine82@gmail.com>",
-          "type": "personal",
-          "icon": null,
-          "description": null,
-          "customTelemetryTags": [],
-          "creatorId": "82e5e99f-adc0-4b0c-b545-b718788e8597"
-        }
-      }
-    ],
-    "versionMetadata": {
-      "name": null,
-      "description": null
-    }
+    "tags": []
   }
 ]

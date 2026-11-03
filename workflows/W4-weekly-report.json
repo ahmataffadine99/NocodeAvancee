@@ -302,30 +302,6 @@
     "versionCounter": 1,
     "triggerCount": 0,
     "sourceWorkflowId": null,
-    "tags": [],
-    "shared": [
-      {
-        "updatedAt": "2026-11-03T11:20:53.851Z",
-        "createdAt": "2026-11-03T11:20:53.851Z",
-        "role": "workflow:owner",
-        "workflowId": "w4WeeklyReport001",
-        "projectId": "9ZscTdcICKosGJ3z",
-        "project": {
-          "updatedAt": "2026-10-29T19:31:30.448Z",
-          "createdAt": "2026-10-29T19:21:11.139Z",
-          "id": "9ZscTdcICKosGJ3z",
-          "name": "Abdoulaye Affadine AHMAT <ahmataffadine82@gmail.com>",
-          "type": "personal",
-          "icon": null,
-          "description": null,
-          "customTelemetryTags": [],
-          "creatorId": "82e5e99f-adc0-4b0c-b545-b718788e8597"
-        }
-      }
-    ],
-    "versionMetadata": {
-      "name": null,
-      "description": null
-    }
+    "tags": []
   }
 ]

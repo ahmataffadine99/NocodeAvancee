@@ -3,6 +3,27 @@
 Projet pédagogique de back-office HelpDesk assisté par IA, réalisé avec n8n et
 Baserow auto-hébergés.
 
+## Fonctionnalités
+
+- **W1 — Ticket Intake** : formulaire n8n, normalisation, recherche du demandeur,
+  classification IA (JSON Schema strict, seuil de confiance), anti-doublon,
+  affectation par compétence et charge, écriture Baserow, mails au demandeur et au
+  technicien, alerte immédiate P1, audit `triaged` / `ai_error`.
+- **W2 — Assisted Reply** : recherche dans la base de connaissances, brouillon IA
+  limité aux articles trouvés, validation humaine obligatoire (approbation ou
+  rejet), envoi uniquement après approbation, audit `reply_drafted` / `reply_sent`.
+- **W3 — SLA Reminders** (toutes les heures) : tickets en retard ou proches de
+  l'échéance, mail au technicien, statut `late`, audit `sla_reminder`.
+- **W4 — Weekly Report** (vendredi 17h) : agrégation par catégorie, priorité et
+  technicien, résumé IA + chiffres clés, mail et audit `report_generated`.
+- **W5 — KB Assistant** (bonus) : webhook `POST /webhook/kb-assistant` qui répond
+  en citant les articles utilisés.
+- **SUB - Write Audit Log** : sous-workflow aux entrées typées, réutilisé par W2,
+  W3, W4 et le workflow d'erreur.
+- **ERR - Global Error Handler** : workflow d'erreur global (journal + alerte mail).
+- Repli si l'IA est indisponible : catégorie `other`, priorité `P3`, tag
+  `manual_review`, journal `ai_error`.
+
 ## Prérequis
 
 - Docker Desktop démarré avec Docker Compose v2.
@@ -16,7 +37,14 @@ accessibles que depuis cet ordinateur.
 
 ## Démarrage local
 
-Dans un terminal ouvert à la racine du projet :
+Dans un terminal ouvert à la racine du projet, démarrage en une commande
+(crée `.env` si besoin, lance les services et attend qu'ils répondent) :
+
+```powershell
+.\start.ps1
+```
+
+Équivalent manuel :
 
 ```powershell
 docker compose config
@@ -69,7 +97,9 @@ personnaliser, copie-le en `.env` ; ce dernier est ignoré par Git.
 ## Jeu de données de démonstration
 
 Le sujet demande un jeu de données et un script d'initialisation Baserow
-rejouable. Les lignes créées par [seed/seed-baserow.mjs](seed/seed-baserow.mjs)
+rejouable. Les six tables doivent d'abord exister dans Baserow (champs et
+relations décrits dans [docs/SCHEMA.md](docs/SCHEMA.md)) ; renseigner leurs
+identifiants dans `.env` (`BASEROW_TABLE_*_ID`). Les lignes créées par [seed/seed-baserow.mjs](seed/seed-baserow.mjs)
 sont fictives et couvrent les six tables. Le script crée ou met à jour les
 lignes de démonstration à partir de leur adresse e-mail, référence ou titre ; il
 ne supprime aucune ligne.
@@ -122,12 +152,20 @@ n8n, Baserow est joignable sur `http://baserow:80` grâce à
 Le formulaire de W1 est servi par n8n sur `/form/<id>` une fois le workflow
 publié (`/form-test/<id>` pendant un test manuel).
 
-## Prochaines étapes
+## Tester le résultat attendu
 
-1. Vérifier que les deux interfaces locales s'ouvrent.
-2. Créer les six tables Baserow décrites dans
-   [docs/SCHEMA.md](docs/SCHEMA.md), puis exécuter le script de seed ci-dessus.
-3. Construire et tester le workflow W1, puis W2, W3 et W4.
-4. Exporter les workflows dans `workflows/` et compléter la documentation.
+1. Publier W1, W2, W5, `SUB - Write Audit Log` et `ERR - Global Error Handler`
+   (W3 et W4 se déclenchent seuls une fois publiés, ou via « Execute workflow »).
+2. Ouvrir le formulaire `http://localhost:5678/form/<id>` (id affiché dans le
+   nœud `Receive Ticket Form`), soumettre une demande.
+3. Dans Baserow : nouveau ticket (catégorie, priorité, technicien), ligne
+   `triaged` dans `AuditLog`. Dans Mailpit : accusé de réception et mail au
+   technicien (et alerte P1 si priorité P1).
+4. Si un article correspond : le mail « Reply draft to approve » contient un
+   lien ; approuver envoie la réponse au demandeur, rejeter n'envoie rien.
+5. Webhook W5 : `POST http://localhost:5678/webhook/kb-assistant` avec
+   `{"question": "..."}`.
 
-Voir [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) pour le schéma de départ.
+Voir [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) pour l'architecture et les
+choix, [docs/PROMPTS.md](docs/PROMPTS.md) pour les prompts et
+[docs/SCHEMA.md](docs/SCHEMA.md) pour le modèle de données.
