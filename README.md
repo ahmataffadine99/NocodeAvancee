@@ -94,6 +94,27 @@ technicien correspondant, des brouillons/réponses approuvées, des articles de
 connaissance et des événements d'audit. Relancer la commande ne crée pas de
 doublons sur ces lignes de démonstration.
 
+## Importer les workflows dans n8n
+
+Les workflows exportés sont dans [workflows/](workflows). Avant de les importer
+(`n8n import:workflow` ou menu **Import from file**), crée dans n8n trois
+credentials, car aucun secret n'est versionné :
+
+- **Baserow Header Auth** (Header Auth) : nom `Authorization`, valeur
+  `Token <jeton Baserow>` ;
+- **Mailpit SMTP** (SMTP) : hôte `mailpit`, port `1025`, sans authentification
+  ni SSL ;
+- **Google Gemini(PaLM) Api account** : ta clé Gemini.
+
+n8n lit les identifiants de tables, les délais SLA, le seuil de confiance et
+l'expéditeur dans les variables d'environnement définies par
+`docker-compose.yml` (valeurs modifiables dans `.env`). Depuis le conteneur
+n8n, Baserow est joignable sur `http://baserow:80` grâce à
+`BASEROW_EXTRA_PUBLIC_URLS`.
+
+Le formulaire de W1 est servi par n8n sur `/form/<id>` une fois le workflow
+publié (`/form-test/<id>` pendant un test manuel).
+
 ## Prochaines étapes
 
 1. Vérifier que les deux interfaces locales s'ouvrent.
