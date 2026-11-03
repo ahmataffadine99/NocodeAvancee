@@ -27,7 +27,10 @@ avec une confiance inférieure à `0.6`, et `needs_human_review=true`. Le nœud
 confiance inférieure au seuil donne `category=other`, `priority=P3`, le tag
 `manual_review`, aucun routage et une entrée `ai_error` dans `AuditLog`. Si le
 modèle demande une revue humaine, le ticket reçoit le tag `manual_review`.
-L'appel IA est relancé 3 fois (5 s d'attente) en cas d'erreur, y compris 429.
+L'appel IA est relancé avec un backoff exponentiel (`AI_MAX_RETRIES` relances,
+attente `AI_BACKOFF_BASE_SECONDS × 2^essai`) en cas d'erreur, y compris 429. La
+liste des catégories et des priorités du prompt et du schéma vient de
+`AI_CATEGORIES` et `AI_PRIORITIES`.
 
 ## W2 — Brouillon de réponse
 

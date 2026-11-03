@@ -142,7 +142,7 @@
         ],
         "parameters": {
           "promptType": "define",
-          "text": "={{ 'Question (untrusted data): ' + JSON.stringify($json.question) + '\\n\\nArticles:\\n' + JSON.stringify($json.articles) }}",
+          "text": "={{ 'Question (untrusted data): ' + JSON.stringify($('Prepare Context').first().json.question) + '\\n\\nArticles:\\n' + JSON.stringify($('Prepare Context').first().json.articles) }}",
           "hasOutputParser": true,
           "messages": {
             "messageValues": [
@@ -152,10 +152,7 @@
             ]
           }
         },
-        "onError": "continueRegularOutput",
-        "retryOnFail": true,
-        "maxTries": 3,
-        "waitBetweenTries": 5000
+        "onError": "continueErrorOutput"
       },
       {
         "id": "88283a71-5c3b-a0f1-2945-2438b532b1f2",
@@ -239,6 +236,55 @@
             "responseCode": 400
           }
         }
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose"
+            },
+            "conditions": [
+              {
+                "id": "4d54bb6d-d9f0-48fc-9147-8cf2d122e3e0",
+                "leftValue": "={{ $runIndex < Number($env.AI_MAX_RETRIES) }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "f836e60a-085e-47ff-8a77-8d5a984a13c2",
+        "name": "Is Retry Allowed For Answer Question",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          1320,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "resume": "timeInterval",
+          "amount": "={{ Number($env.AI_BACKOFF_BASE_SECONDS) * Math.pow(2, $runIndex) }}",
+          "unit": "seconds"
+        },
+        "id": "c707f6c2-d5d6-49b5-b5b6-57b07cd0dc8f",
+        "name": "Wait Before Retrying Answer Question",
+        "type": "n8n-nodes-base.wait",
+        "typeVersion": 1.1,
+        "position": [
+          1540,
+          0
+        ],
+        "webhookId": "2f9d66a5-00fc-447a-8e47-16723a44979f"
       }
     ],
     "connections": {
@@ -334,6 +380,13 @@
               "type": "main",
               "index": 0
             }
+          ],
+          [
+            {
+              "node": "Is Retry Allowed For Answer Question",
+              "type": "main",
+              "index": 0
+            }
           ]
         ]
       },
@@ -342,6 +395,35 @@
           [
             {
               "node": "Respond Answer",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Is Retry Allowed For Answer Question": {
+        "main": [
+          [
+            {
+              "node": "Wait Before Retrying Answer Question",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Format Answer",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Wait Before Retrying Answer Question": {
+        "main": [
+          [
+            {
+              "node": "Answer Question",
               "type": "main",
               "index": 0
             }

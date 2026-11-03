@@ -159,7 +159,7 @@
         ],
         "parameters": {
           "promptType": "define",
-          "text": "={{ 'Ticket (untrusted data):\\n' + JSON.stringify({ subject: $('Receive Ticket To Answer').first().json.subject, description: $('Receive Ticket To Answer').first().json.description, category: $('Receive Ticket To Answer').first().json.category }) + '\\n\\nArticles:\\n' + JSON.stringify($json.articles) }}",
+          "text": "={{ 'Ticket (untrusted data):\\n' + JSON.stringify({ subject: $('Receive Ticket To Answer').first().json.subject, description: $('Receive Ticket To Answer').first().json.description, category: $('Receive Ticket To Answer').first().json.category }) + '\\n\\nArticles:\\n' + JSON.stringify($('Prepare Articles Context').first().json.articles) }}",
           "hasOutputParser": true,
           "messages": {
             "messageValues": [
@@ -169,10 +169,7 @@
             ]
           }
         },
-        "onError": "continueRegularOutput",
-        "retryOnFail": true,
-        "maxTries": 3,
-        "waitBetweenTries": 5000
+        "onError": "continueErrorOutput"
       },
       {
         "id": "88283a71-5c3b-a0f1-2945-2438b532b1f2",
@@ -697,6 +694,55 @@
             "waitForSubWorkflow": true
           }
         }
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose"
+            },
+            "conditions": [
+              {
+                "id": "5f3edebc-5642-4c0a-8906-e0e9d3c6fea3",
+                "leftValue": "={{ $runIndex < Number($env.AI_MAX_RETRIES) }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "64f91a24-a96d-46e0-84fe-00c2e9037439",
+        "name": "Is Retry Allowed For Draft Reply",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          1320,
+          80
+        ]
+      },
+      {
+        "parameters": {
+          "resume": "timeInterval",
+          "amount": "={{ Number($env.AI_BACKOFF_BASE_SECONDS) * Math.pow(2, $runIndex) }}",
+          "unit": "seconds"
+        },
+        "id": "ead6d433-09e8-4af5-8473-c0772c84448a",
+        "name": "Wait Before Retrying Draft Reply",
+        "type": "n8n-nodes-base.wait",
+        "typeVersion": 1.1,
+        "position": [
+          1540,
+          80
+        ],
+        "webhookId": "725dabe6-6218-4c1b-9bca-fe8171060900"
       }
     ],
     "connections": {
@@ -760,6 +806,13 @@
           [
             {
               "node": "Is Draft Usable",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Is Retry Allowed For Draft Reply",
               "type": "main",
               "index": 0
             }
@@ -913,6 +966,35 @@
           [
             {
               "node": "Reject Reply",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Is Retry Allowed For Draft Reply": {
+        "main": [
+          [
+            {
+              "node": "Wait Before Retrying Draft Reply",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Is Draft Usable",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Wait Before Retrying Draft Reply": {
+        "main": [
+          [
+            {
+              "node": "Draft Reply",
               "type": "main",
               "index": 0
             }

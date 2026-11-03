@@ -34,14 +34,25 @@ flowchart LR
   (entrées typées, sortie `{ ok, audit_id, action, ticket_id }`).
 - **Stratégie `onError`** : arrêt par défaut sur les écritures et l'envoi au
   demandeur (risque de données incohérentes) ; `continueRegularOutput` pour les
-  notifications (mail technicien, accusé de réception, alerte P1, alerte erreur)
-  et pour les appels IA (branche de repli).
-- **Retry** : 3 essais sur HTTP, SMTP et IA avec le « Retry On Fail » natif de
-  n8n. Son délai est constant (2 s, 5 s pour l'IA, maximum autorisé par n8n) :
-  le backoff est donc approximé par un délai plus long sur l'IA, puis par la
-  branche de repli (`manual_review` + audit `ai_error`) si les essais échouent,
-  y compris sur 429 ou quota dépassé. Un vrai backoff exponentiel demanderait
-  une boucle Wait + IF, écartée pour garder les workflows lisibles.
+  notifications (mail technicien, accusé de réception, alerte P1, alerte erreur) ;
+  `continueErrorOutput` pour les appels IA (boucle de retry puis branche de repli).
+- **Retry** : l'appel IA (W1, W2, W4, W5) a un vrai backoff exponentiel. La
+  sortie d'erreur de la chaîne LLM alimente une boucle `Is Retry Allowed For …`
+  → `Wait Before Retrying …` → nouvel essai. L'attente vaut
+  `AI_BACKOFF_BASE_SECONDS × 2^essai` (5 s, puis 10 s) et le nombre de relances
+  est `AI_MAX_RETRIES` (2, donc 3 essais). Si tout échoue (429, quota dépassé,
+  indisponibilité), la branche de repli prend le relais : `manual_review` et
+  audit `ai_error`. Cette boucle a été vérifiée sur un vrai 429 de Gemini.
+  Les appels HTTP et SMTP utilisent le « Retry On Fail » natif de n8n (3 essais,
+  2 s), dont le délai est constant.
+- **Valeurs paramétrables** : catégories (`AI_CATEGORIES`), priorités
+  (`AI_PRIORITIES`, `URGENT_PRIORITY`), valeurs de repli (`FALLBACK_CATEGORY`,
+  `FALLBACK_PRIORITY`), tag `MANUAL_REVIEW_TAG`, seuil de confiance, SLA, période
+  du rapport (`REPORT_PERIOD_DAYS`) et adresses e-mail passent par `$env` ; le
+  JSON Schema du Structured Output Parser et le prompt de W1 sont construits à
+  partir de ces variables.
+- **Pas de nœud Code** : W4 calcule ses statistiques avec les nœuds natifs
+  `Split Out` → `Filter` → `Aggregate` → `Edit Fields`.
 - **Traçabilité** : `$execution.id` est inscrit dans le champ `details` de
   chaque ligne d'audit (W1 à W4, workflow d'erreur) pour retrouver l'exécution
   n8n concernée ; W3 y ajoute `$itemIndex` (position du ticket traité).

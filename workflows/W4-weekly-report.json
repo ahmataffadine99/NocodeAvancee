@@ -73,18 +73,83 @@
         "waitBetweenTries": 2000
       },
       {
+        "parameters": {
+          "fieldToSplitOut": "results",
+          "options": {}
+        },
+        "id": "737f033b-d2fb-483e-af28-b532df7e3fa0",
+        "name": "Split Tickets",
+        "type": "n8n-nodes-base.splitOut",
+        "typeVersion": 1,
+        "position": [
+          0,
+          300
+        ],
+        "alwaysOutputData": true
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose"
+            },
+            "conditions": [
+              {
+                "id": "610f9ff8-1ba8-4b6f-b43d-ecb6c94f9aa6",
+                "leftValue": "={{ !!$json.created_at && DateTime.fromISO($json.created_at) >= $now.minus({ days: Number($env.REPORT_PERIOD_DAYS) }) }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "5eb516a5-b4ec-4585-9945-4a72f84e8404",
+        "name": "Filter Recent Tickets",
+        "type": "n8n-nodes-base.filter",
+        "typeVersion": 2.2,
+        "position": [
+          140,
+          300
+        ],
+        "alwaysOutputData": true
+      },
+      {
+        "parameters": {
+          "aggregate": "aggregateAllItemData",
+          "destinationFieldName": "tickets",
+          "options": {}
+        },
+        "id": "15e23f0e-037d-47f7-8510-cb6bf36b4e49",
+        "name": "Aggregate Recent Tickets",
+        "type": "n8n-nodes-base.aggregate",
+        "typeVersion": 1,
+        "position": [
+          290,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "mode": "raw",
+          "jsonOutput": "={{ {\n  stats: {\n    period_start: $now.minus({ days: Number($env.REPORT_PERIOD_DAYS) }).toISODate(),\n    period_end: $now.toISODate(),\n    total: $json.tickets.filter((t) => t.id).length,\n    by_category: $json.tickets.filter((t) => t.id).reduce((acc, t) => ({ ...acc, [t.category?.value ?? 'unknown']: (acc[t.category?.value ?? 'unknown'] ?? 0) + 1 }), {}),\n    by_priority: $json.tickets.filter((t) => t.id).reduce((acc, t) => ({ ...acc, [t.priority?.value ?? 'unknown']: (acc[t.priority?.value ?? 'unknown'] ?? 0) + 1 }), {}),\n    by_status: $json.tickets.filter((t) => t.id).reduce((acc, t) => ({ ...acc, [t.status?.value ?? 'unknown']: (acc[t.status?.value ?? 'unknown'] ?? 0) + 1 }), {}),\n    by_technician: $json.tickets.filter((t) => t.id).reduce((acc, t) => ({ ...acc, [t.assignee?.[0]?.value ?? 'unassigned']: (acc[t.assignee?.[0]?.value ?? 'unassigned'] ?? 0) + 1 }), {}),\n    late: $json.tickets.filter((t) => t.status?.value === 'late').length,\n    manual_review: $json.tickets.filter((t) => t.status?.value === 'manual_review').length\n  }\n} }}",
+          "options": {}
+        },
         "id": "e169fc9f-b69d-9c4e-f29d-c2a392639cd4",
         "name": "Compute Weekly Stats",
-        "type": "n8n-nodes-base.code",
-        "typeVersion": 2,
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
         "position": [
           440,
           300
-        ],
-        "parameters": {
-          "mode": "runOnceForAllItems",
-          "jsCode": "const since = DateTime.now().minus({ days: 7 });\nconst rows = ($input.first().json.results ?? []).filter((t) => t.created_at && DateTime.fromISO(t.created_at) >= since);\nconst count = (key) => rows.reduce((acc, t) => { acc[key(t)] = (acc[key(t)] ?? 0) + 1; return acc; }, {});\nconst stats = {\n  period_start: since.toISODate(),\n  period_end: DateTime.now().toISODate(),\n  total: rows.length,\n  by_category: count((t) => t.category?.value ?? 'unknown'),\n  by_priority: count((t) => t.priority?.value ?? 'unknown'),\n  by_status: count((t) => t.status?.value ?? 'unknown'),\n  by_technician: count((t) => t.assignee?.[0]?.value ?? 'unassigned'),\n  late: rows.filter((t) => t.status?.value === 'late').length,\n  manual_review: rows.filter((t) => t.status?.value === 'manual_review').length,\n};\nreturn [{ json: { stats } }];"
-        }
+        ]
       },
       {
         "id": "7a47f17b-87ce-ae84-c6f9-5af712e75f7b",
@@ -97,7 +162,7 @@
         ],
         "parameters": {
           "promptType": "define",
-          "text": "={{ 'Statistiques de la semaine (JSON):\\n' + JSON.stringify($json.stats) }}",
+          "text": "={{ 'Statistiques de la semaine (JSON):\\n' + JSON.stringify($('Compute Weekly Stats').first().json.stats) }}",
           "messages": {
             "messageValues": [
               {
@@ -106,10 +171,7 @@
             ]
           }
         },
-        "onError": "continueRegularOutput",
-        "retryOnFail": true,
-        "maxTries": 3,
-        "waitBetweenTries": 5000
+        "onError": "continueErrorOutput"
       },
       {
         "id": "88283a71-5c3b-a0f1-2945-2438b532b1f2",
@@ -144,7 +206,7 @@
         ],
         "parameters": {
           "mode": "raw",
-          "jsonOutput": "={{ {\n  stats: $('Compute Weekly Stats').item.json.stats,\n  ai_available: !!$json.text,\n  report: 'WEEKLY HELPDESK REPORT ' + $('Compute Weekly Stats').item.json.stats.period_start + ' -> ' + $('Compute Weekly Stats').item.json.stats.period_end\n    + '\\n\\nKey figures\\n- Tickets created: ' + $('Compute Weekly Stats').item.json.stats.total\n    + '\\n- Late: ' + $('Compute Weekly Stats').item.json.stats.late + '\\n- Manual review: ' + $('Compute Weekly Stats').item.json.stats.manual_review\n    + '\\n- By category: ' + JSON.stringify($('Compute Weekly Stats').item.json.stats.by_category)\n    + '\\n- By priority: ' + JSON.stringify($('Compute Weekly Stats').item.json.stats.by_priority)\n    + '\\n- By status: ' + JSON.stringify($('Compute Weekly Stats').item.json.stats.by_status)\n    + '\\n- By technician: ' + JSON.stringify($('Compute Weekly Stats').item.json.stats.by_technician)\n    + '\\n\\nSummary\\n' + ($json.text || 'AI summary unavailable this week. See the key figures above.')\n} }}",
+          "jsonOutput": "={{ {\n  stats: $('Compute Weekly Stats').first().json.stats,\n  ai_available: !!$json.text,\n  report: 'WEEKLY HELPDESK REPORT ' + $('Compute Weekly Stats').first().json.stats.period_start + ' -> ' + $('Compute Weekly Stats').first().json.stats.period_end\n    + '\\n\\nKey figures\\n- Tickets created: ' + $('Compute Weekly Stats').first().json.stats.total\n    + '\\n- Late: ' + $('Compute Weekly Stats').first().json.stats.late + '\\n- Manual review: ' + $('Compute Weekly Stats').first().json.stats.manual_review\n    + '\\n- By category: ' + JSON.stringify($('Compute Weekly Stats').first().json.stats.by_category)\n    + '\\n- By priority: ' + JSON.stringify($('Compute Weekly Stats').first().json.stats.by_priority)\n    + '\\n- By status: ' + JSON.stringify($('Compute Weekly Stats').first().json.stats.by_status)\n    + '\\n- By technician: ' + JSON.stringify($('Compute Weekly Stats').first().json.stats.by_technician)\n    + '\\n\\nSummary\\n' + ($json.text || 'AI summary unavailable this week. See the key figures above.')\n} }}",
           "options": {}
         }
       },
@@ -208,6 +270,55 @@
             "waitForSubWorkflow": true
           }
         }
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose"
+            },
+            "conditions": [
+              {
+                "id": "27b9216a-99d3-4524-b7f4-d65353b3de5d",
+                "leftValue": "={{ $runIndex < Number($env.AI_MAX_RETRIES) }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "1e31e022-49d9-4e80-bd20-5c40f92c108c",
+        "name": "Is Retry Allowed For Write Weekly Summary",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          880,
+          80
+        ]
+      },
+      {
+        "parameters": {
+          "resume": "timeInterval",
+          "amount": "={{ Number($env.AI_BACKOFF_BASE_SECONDS) * Math.pow(2, $runIndex) }}",
+          "unit": "seconds"
+        },
+        "id": "f36f3372-fe50-42c7-895f-3bb3c48038c4",
+        "name": "Wait Before Retrying Write Weekly Summary",
+        "type": "n8n-nodes-base.wait",
+        "typeVersion": 1.1,
+        "position": [
+          1100,
+          80
+        ],
+        "webhookId": "a67668e5-84f1-43c1-94ee-ae25a9b4f6d0"
       }
     ],
     "connections": {
@@ -226,7 +337,7 @@
         "main": [
           [
             {
-              "node": "Compute Weekly Stats",
+              "node": "Split Tickets",
               "type": "main",
               "index": 0
             }
@@ -263,6 +374,13 @@
               "type": "main",
               "index": 0
             }
+          ],
+          [
+            {
+              "node": "Is Retry Allowed For Write Weekly Summary",
+              "type": "main",
+              "index": 0
+            }
           ]
         ]
       },
@@ -282,6 +400,68 @@
           [
             {
               "node": "Log Weekly Report",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Split Tickets": {
+        "main": [
+          [
+            {
+              "node": "Filter Recent Tickets",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Filter Recent Tickets": {
+        "main": [
+          [
+            {
+              "node": "Aggregate Recent Tickets",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Aggregate Recent Tickets": {
+        "main": [
+          [
+            {
+              "node": "Compute Weekly Stats",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Is Retry Allowed For Write Weekly Summary": {
+        "main": [
+          [
+            {
+              "node": "Wait Before Retrying Write Weekly Summary",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Build Report",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Wait Before Retrying Write Weekly Summary": {
+        "main": [
+          [
+            {
+              "node": "Write Weekly Summary",
               "type": "main",
               "index": 0
             }
