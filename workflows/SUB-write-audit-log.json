@@ -1,0 +1,134 @@
+[
+  {
+    "updatedAt": "2026-11-03T10:52:24.000Z",
+    "createdAt": "2026-11-03T10:50:31.371Z",
+    "id": "subAuditLog00001",
+    "name": "SUB - Write Audit Log",
+    "description": null,
+    "active": true,
+    "isArchived": false,
+    "nodes": [
+      {
+        "id": "38ae46af-8116-8581-4d69-4c0ae48a7ef7",
+        "name": "Receive Audit Entry",
+        "type": "n8n-nodes-base.executeWorkflowTrigger",
+        "typeVersion": 1.1,
+        "position": [
+          0,
+          0
+        ],
+        "parameters": {
+          "inputSource": "workflowInputs",
+          "workflowInputs": {
+            "values": [
+              {
+                "name": "ticket_id",
+                "type": "number"
+              },
+              {
+                "name": "action",
+                "type": "string"
+              },
+              {
+                "name": "details",
+                "type": "string"
+              },
+              {
+                "name": "outcome",
+                "type": "string"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "74b8a40f-8b9b-3c96-ab5c-e20b0fec320d",
+        "name": "Create Audit Entry",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          240,
+          0
+        ],
+        "parameters": {
+          "method": "POST",
+          "url": "={{ $env.BASEROW_INTERNAL_URL + '/api/database/rows/table/' + $env.BASEROW_TABLE_AUDITLOG_ID + '/' }}",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "user_field_names",
+                "value": "true"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify({\n    timestamp: $now.toISO(),\n    ticket: $json.ticket_id ? [$json.ticket_id] : [],\n    action: $json.action, details: $json.details, outcome: $json.outcome\n  }) }}",
+          "options": {}
+        },
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "bsrwHdrAuth0001",
+            "name": "Baserow Header Auth"
+          }
+        },
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000
+      }
+    ],
+    "connections": {
+      "Receive Audit Entry": {
+        "main": [
+          [
+            {
+              "node": "Create Audit Entry",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "settings": {
+      "executionOrder": "v1"
+    },
+    "staticData": null,
+    "meta": null,
+    "nodeGroups": [],
+    "pinData": null,
+    "versionId": "aee3250e-a7e3-42dd-8e3f-0efb013e3891",
+    "activeVersionId": "aee3250e-a7e3-42dd-8e3f-0efb013e3891",
+    "versionCounter": 1,
+    "triggerCount": 0,
+    "sourceWorkflowId": null,
+    "tags": [],
+    "shared": [
+      {
+        "updatedAt": "2026-11-03T10:50:31.381Z",
+        "createdAt": "2026-11-03T10:50:31.381Z",
+        "role": "workflow:owner",
+        "workflowId": "subAuditLog00001",
+        "projectId": "9ZscTdcICKosGJ3z",
+        "project": {
+          "updatedAt": "2026-10-29T19:31:30.448Z",
+          "createdAt": "2026-10-29T19:21:11.139Z",
+          "id": "9ZscTdcICKosGJ3z",
+          "name": "Abdoulaye Affadine AHMAT <ahmataffadine82@gmail.com>",
+          "type": "personal",
+          "icon": null,
+          "description": null,
+          "customTelemetryTags": [],
+          "creatorId": "82e5e99f-adc0-4b0c-b545-b718788e8597"
+        }
+      }
+    ],
+    "versionMetadata": {
+      "name": null,
+      "description": null
+    }
+  }
+]

@@ -29,6 +29,14 @@ confiance inférieure au seuil donne `category=other`, `priority=P3`, le tag
 modèle demande une revue humaine, le ticket reçoit le tag `manual_review`.
 L'appel IA est relancé 3 fois (5 s d'attente) en cas d'erreur, y compris 429.
 
+## W2 — Brouillon de réponse
+
+Le nœud `Draft Reply` (Basic LLM Chain Gemini, sortie contrainte par
+`Parse Draft`) reçoit le ticket et les articles actifs de la catégorie. Il doit
+répondre uniquement à partir de ces articles, n'inventer ni procédure, ni lien,
+ni délai, et renvoyer `can_answer=false` avec un corps vide s'ils ne suffisent
+pas. Aucun brouillon n'est envoyé sans approbation humaine.
+
 Règles à respecter :
 
 - Demander une sortie conforme à un schéma JSON explicite.

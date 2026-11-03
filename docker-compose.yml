@@ -33,6 +33,7 @@ services:
       SLA_HOURS_P3: ${SLA_HOURS_P3:-24}
       SLA_HOURS_P4: ${SLA_HOURS_P4:-72}
       MAIL_FROM: ${MAIL_FROM:-helpdesk@example.test}
+      APPROVER_EMAIL: ${APPROVER_EMAIL:-demo.approver@example.test}
     ports:
       - "127.0.0.1:5678:5678"
     volumes:

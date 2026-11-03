@@ -1,6 +1,6 @@
 [
   {
-    "updatedAt": "2026-11-03T09:53:40.483Z",
+    "updatedAt": "2026-11-03T10:48:59.797Z",
     "createdAt": "2026-10-29T20:14:24.570Z",
     "id": "bz6Fhey9yWCxEso3",
     "name": "W1 - Ticket Intake",
@@ -901,6 +901,74 @@
         "retryOnFail": true,
         "maxTries": 3,
         "waitBetweenTries": 2000
+      },
+      {
+        "id": "32ac24f1-4535-abfc-778d-5609fe1fd087",
+        "name": "Is Reply Draft Allowed",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          4400,
+          880
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose"
+            },
+            "conditions": [
+              {
+                "id": "b4725184-988b-99e7-e585-3480ed2c3bca",
+                "leftValue": "={{ !$('Prepare Ticket Record').first().json.manual_review }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "ad35bd0d-d662-2548-7b47-ce1356564c4f",
+        "name": "Start Assisted Reply",
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.2,
+        "position": [
+          4620,
+          880
+        ],
+        "parameters": {
+          "workflowId": {
+            "__rl": true,
+            "value": "w2AssistedReply01",
+            "mode": "id"
+          },
+          "workflowInputs": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "ticket_id": "={{ $('Create Ticket').first().json.id }}",
+              "reference": "={{ $('Prepare Ticket Record').first().json.reference }}",
+              "subject": "={{ $('Prepare Ticket Record').first().json.subject }}",
+              "description": "={{ $('Prepare Ticket Record').first().json.description }}",
+              "category": "={{ $('Prepare Ticket Record').first().json.category }}",
+              "requester_email": "={{ $('Prepare Ticket Record').first().json.email }}"
+            },
+            "matchingColumns": [],
+            "schema": [],
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": false
+          },
+          "options": {
+            "waitForSubWorkflow": false
+          }
+        }
       }
     ],
     "connections": {
@@ -1130,6 +1198,11 @@
               "node": "Send Acknowledgment Email",
               "type": "main",
               "index": 0
+            },
+            {
+              "node": "Is Reply Draft Allowed",
+              "type": "main",
+              "index": 0
             }
           ]
         ]
@@ -1213,6 +1286,17 @@
             }
           ]
         ]
+      },
+      "Is Reply Draft Allowed": {
+        "main": [
+          [
+            {
+              "node": "Start Assisted Reply",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
       }
     },
     "settings": {
@@ -1224,9 +1308,9 @@
     },
     "nodeGroups": [],
     "pinData": {},
-    "versionId": "7ca8fc09-b416-44f0-b1bf-60898feed2fb",
+    "versionId": "5b3e6ce1-6ff0-49bf-bded-3733b9e0de7c",
     "activeVersionId": null,
-    "versionCounter": 26,
+    "versionCounter": 30,
     "triggerCount": 0,
     "sourceWorkflowId": null,
     "tags": [],
