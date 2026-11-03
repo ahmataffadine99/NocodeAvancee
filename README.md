@@ -97,9 +97,7 @@ personnaliser, copie-le en `.env` ; ce dernier est ignoré par Git.
 ## Jeu de données de démonstration
 
 Le sujet demande un jeu de données et un script d'initialisation Baserow
-rejouable. Les six tables doivent d'abord exister dans Baserow (champs et
-relations décrits dans [docs/SCHEMA.md](docs/SCHEMA.md)) ; renseigner leurs
-identifiants dans `.env` (`BASEROW_TABLE_*_ID`). Les lignes créées par [seed/seed-baserow.mjs](seed/seed-baserow.mjs)
+rejouable. Installation de zéro, dans l'ordre : `BASEROW_EMAIL=... BASEROW_PASSWORD=... node seed\setup-baserow.mjs` crée la base, les six tables, leurs champs et relations (voir [docs/SCHEMA.md](docs/SCHEMA.md)), un jeton d'API, et écrit `BASEROW_API_TOKEN` et les `BASEROW_TABLE_*_ID` dans `.env` ; le script est rejouable. Les lignes créées par [seed/seed-baserow.mjs](seed/seed-baserow.mjs)
 sont fictives et couvrent les six tables. Le script crée ou met à jour les
 lignes de démonstration à partir de leur adresse e-mail, référence ou titre ; il
 ne supprime aucune ligne.
@@ -126,22 +124,9 @@ doublons sur ces lignes de démonstration.
 
 ## Importer les workflows dans n8n
 
-Les workflows exportés sont dans [workflows/](workflows). Avant de les importer
-(`n8n import:workflow` ou menu **Import from file**), crée dans n8n trois
-credentials, car aucun secret n'est versionné :
+Les workflows exportés sont dans [workflows/](workflows). Installation automatisée : renseigne `GEMINI_API_KEY` dans `.env` (le jeton Baserow y est déjà après `setup-baserow.mjs`), puis lance `.\scripts\bootstrap-n8n.ps1`. Il crée les trois credentials (Baserow Header Auth, Mailpit SMTP, Google Gemini), importe les sept workflows dans le bon ordre, les publie et redémarre n8n. Il est rejouable.
 
-- **Baserow Header Auth** (Header Auth) : nom `Authorization`, valeur
-  `Token <jeton Baserow>` ;
-- **Mailpit SMTP** (SMTP) : hôte `mailpit`, port `1025`, sans authentification
-  ni SSL ;
-- **Google Gemini(PaLM) Api account** : ta clé Gemini.
-
-Importe aussi `SUB-write-audit-log.json`, `W2-assisted-reply.json`,
-`W3-sla-reminders.json`, `W4-weekly-report.json`,
-`W5-kb-assistant.json`, `ERR-error-handler.json` puis
-`W1-ticket-intake.json` (dans cet ordre) ; le sous-workflow d'audit et le
-workflow d'erreur doivent être publiés (W5 aussi pour son webhook de
-production).
+Manuellement : crée les trois credentials ci-dessus dans n8n (aucun secret n'est versionné), puis importe `SUB-write-audit-log`, `W2`, `W3`, `W4`, `W5`, `ERR-error-handler` et `W1` dans cet ordre, et publie-les.
 
 n8n lit les identifiants de tables, les délais SLA, le seuil de confiance et
 l'expéditeur dans les variables d'environnement définies par
