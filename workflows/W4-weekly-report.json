@@ -195,7 +195,7 @@
             "value": {
               "ticket_id": "={{ 0 }}",
               "action": "report_generated",
-              "details": "={{ JSON.stringify({ ...$('Build Report').item.json.stats, ai_available: $('Build Report').item.json.ai_available, success: true }) }}",
+              "details": "={{ JSON.stringify({ execution_id: $execution.id, ...$('Build Report').item.json.stats, ai_available: $('Build Report').item.json.ai_available, success: true }) }}",
               "outcome": "={{ 'success: report sent to ' + $env.REPORT_EMAIL }}"
             },
             "matchingColumns": [],

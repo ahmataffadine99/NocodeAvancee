@@ -36,8 +36,15 @@ flowchart LR
   demandeur (risque de données incohérentes) ; `continueRegularOutput` pour les
   notifications (mail technicien, accusé de réception, alerte P1, alerte erreur)
   et pour les appels IA (branche de repli).
-- **Retry** : 3 essais sur HTTP, SMTP et IA ; attente fixe de n8n (2 s, 5 s pour
-  l'IA, ce qui couvre aussi un 429 ponctuel).
+- **Retry** : 3 essais sur HTTP, SMTP et IA avec le « Retry On Fail » natif de
+  n8n. Son délai est constant (2 s, 5 s pour l'IA, maximum autorisé par n8n) :
+  le backoff est donc approximé par un délai plus long sur l'IA, puis par la
+  branche de repli (`manual_review` + audit `ai_error`) si les essais échouent,
+  y compris sur 429 ou quota dépassé. Un vrai backoff exponentiel demanderait
+  une boucle Wait + IF, écartée pour garder les workflows lisibles.
+- **Traçabilité** : `$execution.id` est inscrit dans le champ `details` de
+  chaque ligne d'audit (W1 à W4, workflow d'erreur) pour retrouver l'exécution
+  n8n concernée ; W3 y ajoute `$itemIndex` (position du ticket traité).
 - **Idempotence** : W1 met à jour le ticket ouvert du même demandeur, même sujet,
   même jour ; W3 ignore les tickets déjà `late` ou `closed`.
 - **Mailpit** : boîte SMTP locale, aucun mail ne quitte la machine.

@@ -268,7 +268,7 @@
             "value": {
               "ticket_id": "={{ $('Filter Due Tickets').item.json.id }}",
               "action": "sla_reminder",
-              "details": "={{ JSON.stringify({ reference: $('Filter Due Tickets').item.json.reference, priority: $('Filter Due Tickets').item.json.priority.value, sla_due_at: $('Filter Due Tickets').item.json.sla_due_at, previous_status: $('Filter Due Tickets').item.json.status.value, overdue: DateTime.fromISO($('Filter Due Tickets').item.json.sla_due_at) <= $now, technician: $('Fetch Assigned Technician').item.json.name, success: true }) }}",
+              "details": "={{ JSON.stringify({ execution_id: $execution.id, item_index: $itemIndex, reference: $('Filter Due Tickets').item.json.reference, priority: $('Filter Due Tickets').item.json.priority.value, sla_due_at: $('Filter Due Tickets').item.json.sla_due_at, previous_status: $('Filter Due Tickets').item.json.status.value, overdue: DateTime.fromISO($('Filter Due Tickets').item.json.sla_due_at) <= $now, technician: $('Fetch Assigned Technician').item.json.name, success: true }) }}",
               "outcome": "={{ DateTime.fromISO($('Filter Due Tickets').item.json.sla_due_at) <= $now ? 'success: overdue, ticket set to late' : 'success: due soon, reminder sent' }}"
             },
             "matchingColumns": [],

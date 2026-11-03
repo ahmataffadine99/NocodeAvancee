@@ -263,7 +263,7 @@
             "value": {
               "ticket_id": "={{ $('Receive Ticket To Answer').first().json.ticket_id }}",
               "action": "ai_error",
-              "details": "={{ JSON.stringify({ reference: $('Receive Ticket To Answer').first().json.reference, success: false, reason: 'no_usable_draft' }) }}",
+              "details": "={{ JSON.stringify({ execution_id: $execution.id, reference: $('Receive Ticket To Answer').first().json.reference, success: false, reason: 'no_usable_draft' }) }}",
               "outcome": "failure: no knowledge article or no usable AI draft"
             },
             "matchingColumns": [],
@@ -334,7 +334,7 @@
             "value": {
               "ticket_id": "={{ $('Receive Ticket To Answer').first().json.ticket_id }}",
               "action": "reply_drafted",
-              "details": "={{ JSON.stringify({ reference: $('Receive Ticket To Answer').first().json.reference, reply_id: $('Create Reply Draft').first().json.id, used_article_ids: $('Draft Reply').first().json.output.used_article_ids, success: true }) }}",
+              "details": "={{ JSON.stringify({ execution_id: $execution.id, reference: $('Receive Ticket To Answer').first().json.reference, reply_id: $('Create Reply Draft').first().json.id, used_article_ids: $('Draft Reply').first().json.output.used_article_ids, success: true }) }}",
               "outcome": "success: draft waiting for approval"
             },
             "matchingColumns": [],
@@ -614,7 +614,7 @@
             "value": {
               "ticket_id": "={{ $('Receive Ticket To Answer').first().json.ticket_id }}",
               "action": "reply_sent",
-              "details": "={{ JSON.stringify({ reference: $('Receive Ticket To Answer').first().json.reference, reply_id: $('Create Reply Draft').first().json.id, approver: $('Fetch Approver').first().json.results[0].email, success: true }) }}",
+              "details": "={{ JSON.stringify({ execution_id: $execution.id, reference: $('Receive Ticket To Answer').first().json.reference, reply_id: $('Create Reply Draft').first().json.id, approver: $('Fetch Approver').first().json.results[0].email, success: true }) }}",
               "outcome": "success: approved reply sent"
             },
             "matchingColumns": [],
@@ -685,7 +685,7 @@
             "value": {
               "ticket_id": "={{ $('Receive Ticket To Answer').first().json.ticket_id }}",
               "action": "reply_drafted",
-              "details": "={{ JSON.stringify({ reference: $('Receive Ticket To Answer').first().json.reference, reply_id: $('Create Reply Draft').first().json.id, decision: $('Wait For Human Approval').first().json.Decision, success: false }) }}",
+              "details": "={{ JSON.stringify({ execution_id: $execution.id, reference: $('Receive Ticket To Answer').first().json.reference, reply_id: $('Create Reply Draft').first().json.id, decision: $('Wait For Human Approval').first().json.Decision, success: false }) }}",
               "outcome": "draft rejected or approver unknown; nothing sent"
             },
             "matchingColumns": [],

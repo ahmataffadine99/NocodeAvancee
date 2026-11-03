@@ -39,7 +39,7 @@
             "value": {
               "ticket_id": "={{ 0 }}",
               "action": "ai_error",
-              "details": "={{ JSON.stringify({ workflow: $('On Workflow Error').item.json.workflow.name, failed_node: $('On Workflow Error').item.json.execution.lastNodeExecuted, message: $('On Workflow Error').item.json.execution.error.message, execution_url: $('On Workflow Error').item.json.execution.url, success: false }) }}",
+              "details": "={{ JSON.stringify({ execution_id: $execution.id, workflow: $('On Workflow Error').item.json.workflow.name, failed_node: $('On Workflow Error').item.json.execution.lastNodeExecuted, message: $('On Workflow Error').item.json.execution.error.message, execution_url: $('On Workflow Error').item.json.execution.url, success: false }) }}",
               "outcome": "={{ 'failure: workflow error in ' + $('On Workflow Error').item.json.workflow.name }}"
             },
             "matchingColumns": [],
