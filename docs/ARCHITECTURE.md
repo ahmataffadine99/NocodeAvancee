@@ -14,6 +14,9 @@ que le besoin du projet ne le justifie.
 
 Les appels d'n8n vers Baserow utiliseront l'adresse interne Docker
 `http://baserow:80`, et non `localhost` (qui désigne le conteneur n8n lui-même).
+Les requêtes API faites depuis n8n ajoutent l'en-tête `Host: localhost:8081` :
+Baserow utilise cette adresse publique canonique et traite sinon le nom Docker
+comme un domaine d'application publiée.
 
 ## Modèle Baserow à créer
 
@@ -29,6 +32,8 @@ Les six tables requises par le sujet :
 Les champs, relations et règles détaillés sont définis dans
 [SCHEMA.md](SCHEMA.md). Ne place aucune donnée réelle de collaborateurs dans le
 jeu de démonstration.
+Le jeu fictif rejouable demandé par le sujet se trouve dans
+[seed/seed-baserow.mjs](../seed/seed-baserow.mjs) ; il ne supprime aucune ligne.
 
 ## Workflows prévus
 
