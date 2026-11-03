@@ -36,7 +36,7 @@ de démonstration devront être fictives.
 | `description` | Texte long | Description normalisée |
 | `category` | Sélection simple | `hardware`, `access`, `software`, `network`, `onboarding`, `other` |
 | `priority` | Sélection simple | `P1`, `P2`, `P3`, `P4` |
-| `status` | Sélection simple | `new`, `triaged`, `assigned`, `pending`, `waiting_approval`, `closed`, `manual_review` |
+| `status` | Sélection simple | `new`, `triaged`, `assigned`, `pending`, `waiting_approval`, `late`, `closed`, `manual_review` |
 | `requester` | Lien vers `Collaborators` | Un demandeur par ticket |
 | `assignee` | Lien vers `Technicians` | Peut être vide si aucune affectation sûre |
 | `created_at` | Date et heure | Horodatage normalisé par W1 |

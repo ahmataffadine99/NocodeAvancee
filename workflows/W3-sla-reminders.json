@@ -1,0 +1,420 @@
+[
+  {
+    "updatedAt": "2026-11-03T11:09:11.490Z",
+    "createdAt": "2026-11-03T11:09:11.490Z",
+    "id": "w3SlaReminders001",
+    "name": "W3 - SLA Reminders",
+    "description": null,
+    "active": false,
+    "isArchived": false,
+    "nodes": [
+      {
+        "id": "d6713aee-64ad-6c24-f7d0-3230d16486b2",
+        "name": "Run Every Hour",
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1.2,
+        "position": [
+          0,
+          300
+        ],
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "field": "hours",
+                "hoursInterval": 1
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "91f42447-01f6-fe5a-0ec2-debcc91082ef",
+        "name": "Fetch Open Tickets",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          220,
+          300
+        ],
+        "parameters": {
+          "method": "GET",
+          "url": "={{ $env.BASEROW_INTERNAL_URL + '/api/database/rows/table/' + $env.BASEROW_TABLE_TICKETS_ID + '/' }}",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "user_field_names",
+                "value": "true"
+              },
+              {
+                "name": "size",
+                "value": "200"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "bsrwHdrAuth0001",
+            "name": "Baserow Header Auth"
+          }
+        },
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000
+      },
+      {
+        "id": "e2d12f48-0286-8593-3bfb-877e542ed453",
+        "name": "Split Tickets",
+        "type": "n8n-nodes-base.splitOut",
+        "typeVersion": 1,
+        "position": [
+          440,
+          300
+        ],
+        "parameters": {
+          "fieldToSplitOut": "results",
+          "options": {}
+        }
+      },
+      {
+        "id": "cd1b933d-ad7b-552c-fc0f-18a9664f54a9",
+        "name": "Filter Due Tickets",
+        "type": "n8n-nodes-base.filter",
+        "typeVersion": 2.2,
+        "position": [
+          660,
+          300
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose"
+            },
+            "conditions": [
+              {
+                "id": "a9c682cb-984f-547d-e2e0-a316d71d42fc",
+                "leftValue": "={{ !['closed', 'late'].includes($json.status?.value) && ($json.assignee ?? []).length > 0 && !!$json.sla_due_at && DateTime.fromISO($json.sla_due_at) <= $now.plus({ hours: Number($env.SLA_WARNING_HOURS) }) }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "620d7194-dfc6-f84a-1ba3-49e2ddfcae3f",
+        "name": "Fetch Assigned Technician",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          880,
+          300
+        ],
+        "parameters": {
+          "method": "GET",
+          "url": "={{ $env.BASEROW_INTERNAL_URL + '/api/database/rows/table/' + $env.BASEROW_TABLE_TECHNICIANS_ID + '/' + $json.assignee[0].id + '/' }}",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "user_field_names",
+                "value": "true"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "bsrwHdrAuth0001",
+            "name": "Baserow Header Auth"
+          }
+        },
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000
+      },
+      {
+        "id": "48f9600e-d831-c63a-a5ad-dda64f89fd75",
+        "name": "Notify Technician Of SLA",
+        "type": "n8n-nodes-base.emailSend",
+        "typeVersion": 2.1,
+        "position": [
+          1100,
+          300
+        ],
+        "parameters": {
+          "fromEmail": "={{ $env.MAIL_FROM }}",
+          "toEmail": "={{ $('Fetch Assigned Technician').item.json.email }}",
+          "subject": "={{ '[SLA ' + (DateTime.fromISO($('Filter Due Tickets').item.json.sla_due_at) <= $now ? 'OVERDUE' : 'DUE SOON') + '] ' + $('Filter Due Tickets').item.json.reference }}",
+          "emailFormat": "text",
+          "text": "={{ 'Ticket ' + $('Filter Due Tickets').item.json.reference + ' (' + $('Filter Due Tickets').item.json.priority.value + ') - ' + $('Filter Due Tickets').item.json.subject + '\\nSLA due: ' + $('Filter Due Tickets').item.json.sla_due_at + '\\nCurrent status: ' + $('Filter Due Tickets').item.json.status.value + '\\n\\n' + (DateTime.fromISO($('Filter Due Tickets').item.json.sla_due_at) <= $now ? 'The SLA deadline has passed. Please handle this ticket now.' : 'The SLA deadline is approaching.') }}",
+          "options": {}
+        },
+        "credentials": {
+          "smtp": {
+            "id": "mailpitSmtp0001",
+            "name": "Mailpit SMTP"
+          }
+        },
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000
+      },
+      {
+        "id": "fc021606-1f39-daf1-939f-3688b1e8c306",
+        "name": "Is SLA Overdue",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          1320,
+          300
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose"
+            },
+            "conditions": [
+              {
+                "id": "ecb456f5-137a-e4e5-e6e5-7863492e26dc",
+                "leftValue": "={{ DateTime.fromISO($('Filter Due Tickets').item.json.sla_due_at) <= $now }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "d8604464-3b79-6c3c-3a43-43038ccc0239",
+        "name": "Mark Ticket Late",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          1540,
+          220
+        ],
+        "parameters": {
+          "method": "PATCH",
+          "url": "={{ $env.BASEROW_INTERNAL_URL + '/api/database/rows/table/' + $env.BASEROW_TABLE_TICKETS_ID + '/' + $('Filter Due Tickets').item.json.id + '/' }}",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "user_field_names",
+                "value": "true"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify({ status: 'late' }) }}",
+          "options": {}
+        },
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "bsrwHdrAuth0001",
+            "name": "Baserow Header Auth"
+          }
+        },
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000
+      },
+      {
+        "id": "e8cec97a-7880-dea2-a05e-f31d194b5523",
+        "name": "Log SLA Reminder",
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.2,
+        "position": [
+          1760,
+          300
+        ],
+        "parameters": {
+          "workflowId": {
+            "__rl": true,
+            "value": "subAuditLog00001",
+            "mode": "id"
+          },
+          "workflowInputs": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "ticket_id": "={{ $('Filter Due Tickets').item.json.id }}",
+              "action": "sla_reminder",
+              "details": "={{ JSON.stringify({ reference: $('Filter Due Tickets').item.json.reference, priority: $('Filter Due Tickets').item.json.priority.value, sla_due_at: $('Filter Due Tickets').item.json.sla_due_at, previous_status: $('Filter Due Tickets').item.json.status.value, overdue: DateTime.fromISO($('Filter Due Tickets').item.json.sla_due_at) <= $now, technician: $('Fetch Assigned Technician').item.json.name, success: true }) }}",
+              "outcome": "={{ DateTime.fromISO($('Filter Due Tickets').item.json.sla_due_at) <= $now ? 'success: overdue, ticket set to late' : 'success: due soon, reminder sent' }}"
+            },
+            "matchingColumns": [],
+            "schema": [],
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": false
+          },
+          "mode": "each",
+          "options": {
+            "waitForSubWorkflow": true
+          }
+        }
+      }
+    ],
+    "connections": {
+      "Run Every Hour": {
+        "main": [
+          [
+            {
+              "node": "Fetch Open Tickets",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Fetch Open Tickets": {
+        "main": [
+          [
+            {
+              "node": "Split Tickets",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Split Tickets": {
+        "main": [
+          [
+            {
+              "node": "Filter Due Tickets",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Filter Due Tickets": {
+        "main": [
+          [
+            {
+              "node": "Fetch Assigned Technician",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Fetch Assigned Technician": {
+        "main": [
+          [
+            {
+              "node": "Notify Technician Of SLA",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Notify Technician Of SLA": {
+        "main": [
+          [
+            {
+              "node": "Is SLA Overdue",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Is SLA Overdue": {
+        "main": [
+          [
+            {
+              "node": "Mark Ticket Late",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Log SLA Reminder",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Mark Ticket Late": {
+        "main": [
+          [
+            {
+              "node": "Log SLA Reminder",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "settings": {
+      "executionOrder": "v1"
+    },
+    "staticData": null,
+    "meta": null,
+    "nodeGroups": [],
+    "pinData": null,
+    "versionId": "9239a61c-6f0e-4ed2-a2fe-53747092fdda",
+    "activeVersionId": null,
+    "versionCounter": 1,
+    "triggerCount": 0,
+    "sourceWorkflowId": null,
+    "tags": [],
+    "shared": [
+      {
+        "updatedAt": "2026-11-03T11:09:11.494Z",
+        "createdAt": "2026-11-03T11:09:11.494Z",
+        "role": "workflow:owner",
+        "workflowId": "w3SlaReminders001",
+        "projectId": "9ZscTdcICKosGJ3z",
+        "project": {
+          "updatedAt": "2026-10-29T19:31:30.448Z",
+          "createdAt": "2026-10-29T19:21:11.139Z",
+          "id": "9ZscTdcICKosGJ3z",
+          "name": "Abdoulaye Affadine AHMAT <ahmataffadine82@gmail.com>",
+          "type": "personal",
+          "icon": null,
+          "description": null,
+          "customTelemetryTags": [],
+          "creatorId": "82e5e99f-adc0-4b0c-b545-b718788e8597"
+        }
+      }
+    ],
+    "versionMetadata": {
+      "name": null,
+      "description": null
+    }
+  }
+]

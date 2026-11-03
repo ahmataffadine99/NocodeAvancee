@@ -32,6 +32,7 @@ services:
       SLA_HOURS_P2: ${SLA_HOURS_P2:-8}
       SLA_HOURS_P3: ${SLA_HOURS_P3:-24}
       SLA_HOURS_P4: ${SLA_HOURS_P4:-72}
+      SLA_WARNING_HOURS: ${SLA_WARNING_HOURS:-1}
       MAIL_FROM: ${MAIL_FROM:-helpdesk@example.test}
       APPROVER_EMAIL: ${APPROVER_EMAIL:-demo.approver@example.test}
     ports:
