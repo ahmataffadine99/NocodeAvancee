@@ -137,6 +137,25 @@ n8n, Baserow est joignable sur `http://baserow:80` grâce à
 Le formulaire de W1 est servi par n8n sur `/form/<id>` une fois le workflow
 publié (`/form-test/<id>` pendant un test manuel).
 
+## Captures d'écran
+
+| Formulaire de demande (W1) | Accusé de réception (Mailpit) |
+|---|---|
+| ![Formulaire](docs/img/form-w1.png) | ![Mailpit](docs/img/mailpit.png) |
+
+W1 - Ticket Intake (triage IA, affectation, notifications) :
+
+![W1](docs/img/n8n-w1.png)
+
+W2 - Assisted Reply (brouillon IA, approbation humaine, envoi) :
+
+![W2](docs/img/n8n-w2.png)
+
+Résultat dans Baserow (tickets, puis journal d'audit) :
+
+![Tickets](docs/img/baserow-tickets.png)
+
+![AuditLog](docs/img/baserow-auditlog.png)
 ## Tester le résultat attendu
 
 1. Publier W1, W2, W5, `SUB - Write Audit Log` et `ERR - Global Error Handler`
