@@ -107,9 +107,11 @@ credentials, car aucun secret n'est versionné :
 - **Google Gemini(PaLM) Api account** : ta clé Gemini.
 
 Importe aussi `SUB-write-audit-log.json`, `W2-assisted-reply.json`,
-`W3-sla-reminders.json`, `W4-weekly-report.json` puis
-`W1-ticket-intake.json` (dans cet ordre) ; le sous-workflow d'audit doit être
-publié pour être appelable par W2.
+`W3-sla-reminders.json`, `W4-weekly-report.json`,
+`W5-kb-assistant.json`, `ERR-error-handler.json` puis
+`W1-ticket-intake.json` (dans cet ordre) ; le sous-workflow d'audit et le
+workflow d'erreur doivent être publiés (W5 aussi pour son webhook de
+production).
 
 n8n lit les identifiants de tables, les délais SLA, le seuil de confiance et
 l'expéditeur dans les variables d'environnement définies par

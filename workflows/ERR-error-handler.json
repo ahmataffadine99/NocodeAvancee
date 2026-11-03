@@ -1,0 +1,146 @@
+[
+  {
+    "updatedAt": "2026-11-03T11:25:40.000Z",
+    "createdAt": "2026-11-03T11:24:59.581Z",
+    "id": "wErrorHandler0001",
+    "name": "ERR - Global Error Handler",
+    "description": null,
+    "active": true,
+    "isArchived": false,
+    "nodes": [
+      {
+        "id": "bd9cb443-b086-9d49-b120-5eb0a441f607",
+        "name": "On Workflow Error",
+        "type": "n8n-nodes-base.errorTrigger",
+        "typeVersion": 1,
+        "position": [
+          0,
+          300
+        ],
+        "parameters": {}
+      },
+      {
+        "id": "a64aff3e-9bae-c921-4a3f-cf0f6c5a3269",
+        "name": "Log Workflow Error",
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.2,
+        "position": [
+          220,
+          300
+        ],
+        "parameters": {
+          "workflowId": {
+            "__rl": true,
+            "value": "subAuditLog00001",
+            "mode": "id"
+          },
+          "workflowInputs": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "ticket_id": "={{ 0 }}",
+              "action": "ai_error",
+              "details": "={{ JSON.stringify({ workflow: $('On Workflow Error').item.json.workflow.name, failed_node: $('On Workflow Error').item.json.execution.lastNodeExecuted, message: $('On Workflow Error').item.json.execution.error.message, execution_url: $('On Workflow Error').item.json.execution.url, success: false }) }}",
+              "outcome": "={{ 'failure: workflow error in ' + $('On Workflow Error').item.json.workflow.name }}"
+            },
+            "matchingColumns": [],
+            "schema": [],
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": false
+          },
+          "mode": "each",
+          "options": {
+            "waitForSubWorkflow": true
+          }
+        }
+      },
+      {
+        "id": "13aeb7a5-c80a-83b7-15fc-3605ee703589",
+        "name": "Alert Administrator",
+        "type": "n8n-nodes-base.emailSend",
+        "typeVersion": 2.1,
+        "position": [
+          440,
+          300
+        ],
+        "parameters": {
+          "fromEmail": "={{ $env.MAIL_FROM }}",
+          "toEmail": "={{ $env.ERROR_EMAIL }}",
+          "subject": "={{ '[HelpDesk ERROR] ' + $('On Workflow Error').item.json.workflow.name }}",
+          "emailFormat": "text",
+          "text": "={{ 'Workflow: ' + $('On Workflow Error').item.json.workflow.name + '\\nFailed node: ' + $('On Workflow Error').item.json.execution.lastNodeExecuted + '\\nMessage: ' + $('On Workflow Error').item.json.execution.error.message + '\\nExecution: ' + $('On Workflow Error').item.json.execution.url }}",
+          "options": {}
+        },
+        "credentials": {
+          "smtp": {
+            "id": "mailpitSmtp0001",
+            "name": "Mailpit SMTP"
+          }
+        },
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000
+      }
+    ],
+    "connections": {
+      "On Workflow Error": {
+        "main": [
+          [
+            {
+              "node": "Log Workflow Error",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Log Workflow Error": {
+        "main": [
+          [
+            {
+              "node": "Alert Administrator",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "settings": {
+      "executionOrder": "v1"
+    },
+    "staticData": null,
+    "meta": null,
+    "nodeGroups": [],
+    "pinData": null,
+    "versionId": "872cb5a1-8189-4180-ac23-fbeb31320a6d",
+    "activeVersionId": "872cb5a1-8189-4180-ac23-fbeb31320a6d",
+    "versionCounter": 1,
+    "triggerCount": 0,
+    "sourceWorkflowId": null,
+    "tags": [],
+    "shared": [
+      {
+        "updatedAt": "2026-11-03T11:24:59.586Z",
+        "createdAt": "2026-11-03T11:24:59.586Z",
+        "role": "workflow:owner",
+        "workflowId": "wErrorHandler0001",
+        "projectId": "9ZscTdcICKosGJ3z",
+        "project": {
+          "updatedAt": "2026-10-29T19:31:30.448Z",
+          "createdAt": "2026-10-29T19:21:11.139Z",
+          "id": "9ZscTdcICKosGJ3z",
+          "name": "Abdoulaye Affadine AHMAT <ahmataffadine82@gmail.com>",
+          "type": "personal",
+          "icon": null,
+          "description": null,
+          "customTelemetryTags": [],
+          "creatorId": "82e5e99f-adc0-4b0c-b545-b718788e8597"
+        }
+      }
+    ],
+    "versionMetadata": {
+      "name": null,
+      "description": null
+    }
+  }
+]

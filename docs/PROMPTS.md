@@ -44,6 +44,13 @@ statistiques agrégées de la semaine (JSON) et rédige un résumé en français
 5 à 8 lignes, sans inventer de chiffre. Si l'IA échoue, le rapport est envoyé
 avec les chiffres clés et la mention « AI summary unavailable ».
 
+## W5 — Assistant de base de connaissances
+
+Le nœud `Answer Question` (Basic LLM Chain Gemini, sortie contrainte par
+`Parse Answer`) répond uniquement à partir des articles actifs, renvoie
+`can_answer=false` si les articles ne suffisent pas et liste les articles
+utilisés (`used_article_ids`), convertis en `sources` (id + titre).
+
 Règles à respecter :
 
 - Demander une sortie conforme à un schéma JSON explicite.

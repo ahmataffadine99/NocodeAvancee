@@ -35,13 +35,29 @@ jeu de démonstration.
 Le jeu fictif rejouable demandé par le sujet se trouve dans
 [seed/seed-baserow.mjs](../seed/seed-baserow.mjs) ; il ne supprime aucune ligne.
 
-## Workflows prévus
+## Workflows
 
-- `W1` : réception, normalisation, classification structurée et affectation.
+- `W1` (`W1-ticket-intake.json`) : formulaire, normalisation, classification
+  structurée, affectation, mails. Lance W2 sans l'attendre.
 - `W2` : recherche documentaire, brouillon de réponse et approbation humaine.
-- `W3` : surveillance SLA, notifications et journalisation.
-- `W4` : rapport hebdomadaire.
-- `W5` : assistant de base de connaissances (bonus).
+- `W3` : surveillance SLA (toutes les heures), mails et statut `late`.
+- `W4` : rapport hebdomadaire (vendredi 17h) par mail et dans `AuditLog`.
+- `W5` : assistant de base de connaissances (bonus), webhook
+  `POST /webhook/kb-assistant` avec `{"question": "..."}`; réponse JSON avec
+  `answer` et `sources` (articles cités).
+- `SUB - Write Audit Log` : sous-workflow réutilisé par W2, W3, W4 et le
+  workflow d'erreur ; il écrit une ligne dans `AuditLog`.
+- `ERR - Global Error Handler` : workflow d'erreur global (Error Trigger),
+  rattaché à tous les workflows ; il journalise dans `AuditLog` et alerte
+  `ERROR_EMAIL`.
 
-Un workflow réutilisable sera invoqué par au moins deux workflows parents et
-retournera une sortie documentée et normalisée.
+## Robustesse
+
+- Appels HTTP, Gemini et SMTP : 3 essais avec attente fixe entre les essais
+  (2 s pour HTTP/SMTP, 5 s pour l'IA), y compris sur 429.
+- IA : `onError: continueRegularOutput` puis branche de repli (W1 : revue
+  manuelle ; W2 : pas de brouillon ; W4 : rapport sans résumé ; W5 : message
+  « aucune réponse fiable »).
+- Idempotence : W1 refuse les doublons ; W3 ne relance plus un ticket déjà
+  `late`.
+- Aucun secret dans les workflows : credentials n8n et variables d'environnement.
